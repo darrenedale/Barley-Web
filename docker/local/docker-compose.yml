@@ -1,0 +1,52 @@
+# LOCAL docker stack for Barley development.
+#
+# THIS CONFIGURATION IS SUITABLE FOR LOCALLY-BASED DEVELOPMENT ONLY. IT SHOULD NEVER BE USED ON A
+# PUBLICLY-ACCESSIBLE OR REMOTE-ACCESSIBLE DEVICE
+version: "3.8"
+
+volumes:
+  maria-data:
+
+networks:
+  barley-private:
+    ipam:
+      driver: default
+      config:
+        - subnet: 192.168.90.0/24
+
+services:
+  php81:
+    image: darrenedale/equit:php-8.1-fpm
+    networks:
+      - barley-private
+    volumes:
+      - ../../:/usr/share/nginx/html
+      - ./logs:/var/log/barley
+      - ./etc/profile.d/xdebug-php.sh:/etc/profile.d/xdebug-php.sh
+    environment:
+      - PHP_IDE_CONFIG=serverName=Docker
+      - ENV=/etc/profile
+
+  db:
+    image: mariadb:latest
+    networks:
+      - barley-private
+    volumes:
+      - maria-data:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: barley
+    ports:
+      - "3306:3306"
+
+  nginx:
+    image: nginx:stable-alpine
+    networks:
+      - barley-private
+    volumes:
+      - ../../:/usr/share/nginx/html
+      - ./etc/nginx/conf.d:/etc/nginx/conf.d
+      - ./logs:/var/log/barley
+    ports:
+      - "80:8081"
+      - "8081:8081"
+      - "44381:44381"
