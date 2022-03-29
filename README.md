@@ -1,2 +1,2 @@
-# Barley-Web
+# Barley
 A barcode generator web app
