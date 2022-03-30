@@ -9,18 +9,19 @@ return new class extends Migration
     /**
      * Run the migrations.
      *
+     * Creates the table that stores tags added by users.
+     *
      * @return void
      */
     public function up()
     {
-        Schema::create("failed_jobs", function (Blueprint $table) {
+        Schema::create("tags", function (Blueprint $table) {
             $table->id();
-            $table->string("uuid")->unique();
-            $table->text("connection");
-            $table->text("queue");
-            $table->longText("payload");
-            $table->longText("exception");
-            $table->timestamp("failed_at")->useCurrent();
+            $table->bigInteger("user_id")->unsigned();
+            $table->string("tag", 100)->default("");
+            $table->dateTime("archived_at")->nullable()->default(null);
+            $table->softDeletes();
+            $table->timestamps();
         });
     }
 
@@ -31,6 +32,6 @@ return new class extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists("failed_jobs");
+        Schema::dropIfExists("tags");
     }
 };
