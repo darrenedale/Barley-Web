@@ -23,6 +23,7 @@ services:
       - ../../:/usr/share/nginx/html
       - ./logs:/var/log/barley
       - ./etc/profile.d/xdebug-php.sh:/etc/profile.d/xdebug-php.sh
+      - ./etc/crontabs:/etc/crontabs
     environment:
       - PHP_IDE_CONFIG=serverName=Docker
       - ENV=/etc/profile

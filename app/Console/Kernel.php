@@ -15,7 +15,8 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        // $schedule->command('inspire')->hourly();
+        // every hour, prune all soft-deleted data that has reached its expiry threshold
+        $schedule->command("prune:barley-all")->hourly();
     }
 
     /**
