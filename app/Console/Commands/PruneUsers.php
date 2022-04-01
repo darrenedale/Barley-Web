@@ -23,7 +23,7 @@ class PruneUsers extends PruneCommand
      *
      * @var string
      */
-    protected $description = "Command description";
+    protected $description = 'Prune all users records that were soft-deleted over 28 days ago';
 
     /**
      * @var string|null Prune User models.

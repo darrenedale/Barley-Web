@@ -23,7 +23,7 @@ class PruneBarcodes extends PruneCommand
      *
      * @var string
      */
-    protected $description = 'Command description';
+    protected $description = 'Prune all barcodes records that were soft-deleted over 7 days ago';
 
     /**
      * @var int|null The cutoff age, in days, for pruning soft-deletes.

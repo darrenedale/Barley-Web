@@ -23,7 +23,7 @@ class PruneTags extends PruneCommand
      *
      * @var string
      */
-    protected $description = 'Command description';
+    protected $description = 'Prune all tags records that were soft-deleted over 7 days ago';
 
     /**
      * @var string|null The model class for tags.

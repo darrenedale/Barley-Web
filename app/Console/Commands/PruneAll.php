@@ -22,7 +22,10 @@ class PruneAll extends AggregateCommand
      *
      * @var string
      */
-    protected $description = 'Command description';
+    protected $description = <<<'EOT'
+Prune all database records that were soft-deleted over a threshold number of days ago. (The threshold differs according
+to the type of record being pruned - see individual prune:barley-* commands for details.)
+EOT;
 
     /**
      * The individual commands that do the pruning of specific models.
