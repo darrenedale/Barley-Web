@@ -17,6 +17,9 @@ class Kernel extends ConsoleKernel
     {
         // every hour, prune all soft-deleted data that has reached its expiry threshold
         $schedule->command("prune:barley-all")->hourly();
+
+        // once a day soft-delete all the shared barcodes that have expired
+        $schedule->command("expire:barley-shared-barcodes")->daily();
     }
 
     /**

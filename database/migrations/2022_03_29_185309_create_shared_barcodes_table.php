@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -22,6 +23,7 @@ return new class extends Migration
             $table->string("name", 200)->default("");
             $table->text("data")->default("");
             $table->string("generator", 20)->default("");
+            $table->dateTime("expires_at")->default("9999-12-31 23:59:59");
             $table->timestamps();
             $table->softDeletes();
             $table->foreign("shared_by")->references("id")->on("users")->nullOnDelete();
