@@ -92,7 +92,6 @@ class Bitmap
             BitmapOutputFormat::Jpeg => IMG_JPEG,
             BitmapOutputFormat::Gif => IMG_GIF,
             BitmapOutputFormat::Bmp => IMG_BMP,
-            BitmapOutputFormat::Xpm => IMG_XPM,
             BitmapOutputFormat::Webp => IMG_WEBP,
         });
     }
@@ -112,6 +111,8 @@ class Bitmap
             BitmapOutputFormat::Png => imagepng($this->m_image),
             BitmapOutputFormat::Jpeg => imagejpeg($this->m_image),
             BitmapOutputFormat::Bmp => imagebmp($this->m_image),
+            BitmapOutputFormat::Gif => imagegif($this->m_image),
+            BitmapOutputFormat::Webp => imagewebp($this->m_image),
         };
 
         $data = ob_get_contents();
