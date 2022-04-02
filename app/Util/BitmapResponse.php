@@ -19,6 +19,7 @@ class BitmapResponse extends Response
             BitmapOutputFormat::Jpeg => "image/jpeg",
             BitmapOutputFormat::Bmp => "image/bmp",
             BitmapOutputFormat::Gif => "image/gif",
+            BitmapOutputFormat::Webp => "image/webp",
         }]);
     }
 }
