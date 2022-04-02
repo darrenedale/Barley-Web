@@ -177,7 +177,7 @@ return [
         // App\Providers\BroadcastServiceProvider::class,
         App\Providers\EventServiceProvider::class,
         App\Providers\RouteServiceProvider::class,
-
+        ("local" === env('APP_ENV', 'production') ? App\Providers\LocalDevelopmentServiceProvider::class : ""),
     ],
 
     /*
