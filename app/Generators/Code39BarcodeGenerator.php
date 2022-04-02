@@ -13,6 +13,11 @@ use JetBrains\PhpStorm\Pure;
  */
 class Code39BarcodeGenerator extends LinearBarcodeGenerator
 {
+    /**
+     * The number of bar widths in the quiet zones.
+     */
+    private const QuietZoneExtent = 10;
+
     // The CODE39 dictionary
     public const ValidDigits = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 -$%./+";
 
@@ -130,7 +135,7 @@ class Code39BarcodeGenerator extends LinearBarcodeGenerator
         $digitCount = strlen($this->data());
         // 12 pixels per digit, plus 12 each for the terminators, plus one pixel between each
         // digit and between the first/last digit and the terminator
-        return (($digitCount + 2) * self::PatternBits) + $digitCount + 1;
+        return (2 * self::QuietZoneExtent) + (($digitCount + 2) * self::PatternBits) + $digitCount + 1;
     }
 
     /**
@@ -192,27 +197,24 @@ class Code39BarcodeGenerator extends LinearBarcodeGenerator
         }
 
         $minWidth = $this->minWidthForData();
-
         $bmp = Bitmap::createBitmap($minWidth, 1);
-        self::renderPatternToBitmap($bmp, self::TerminatorPattern, self::PatternBits, 0);
-        $x = self::PatternBits;
+        self::renderPatternToBitmap($bmp, 0, self::QuietZoneExtent, 0);
+        $x = self::QuietZoneExtent;
+        self::renderPatternToBitmap($bmp, self::TerminatorPattern, self::PatternBits, $x);
+        $x += self::PatternBits;
 
         foreach ($this->getDigitIndices() as $digitIndex) {
             $bmp->setPixel($x, 0, Colour::WHITE);    // spacer before digit
             ++$x;
-            $mask  = 1 << (self::PatternBits - 1);
-            $digit = self::DigitPatterns[$digitIndex];
-
-            for ($bit = 0; $bit < self::PatternBits; ++$bit) {
-                $bmp->setPixel($x, 0, (0 != ($digit & $mask) ? Colour::BLACK : Colour::WHITE));
-                ++$x;
-                $mask >>= 1;
-            }
+            self::renderPatternToBitmap($bmp, self::DigitPatterns[$digitIndex], self::PatternBits, $x);
+            $x += self::PatternBits;
         }
 
         $bmp->setPixel($x, 0, Colour::WHITE);    // spacer after final digit
         ++$x;
         self::renderPatternToBitmap($bmp, self::TerminatorPattern, self::PatternBits, $x);
+        $x += self::PatternBits;
+        self::renderPatternToBitmap($bmp, 0, self::QuietZoneExtent, $x);
         return Bitmap::createScaledBitmap($bmp, max($size->width, $minWidth), $size->height, false);
     }
 }
