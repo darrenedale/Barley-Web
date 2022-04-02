@@ -13,6 +13,11 @@ use JetBrains\PhpStorm\Pure;
  */
 class Code11BarcodeGenerator extends LinearBarcodeGenerator
 {
+    /**
+     * The number of bar widths in the quiet zones.
+     */
+    private const QuietZoneExtent = 10;
+
     // the full set of digits that Code 11 can encode
     public const ValidDigits = "0123456789-";
 
@@ -98,7 +103,7 @@ class Code11BarcodeGenerator extends LinearBarcodeGenerator
      */
     #[Pure] private function minWidthForData(): int
     {
-        $min = 2 * self::TerminatorPatternBits;
+        $min = 2 * (self::TerminatorPatternBits + self::QuietZoneExtent);
         $data = $this->getDigitIndices();
 
         if (0 < count($data)) {
@@ -161,8 +166,10 @@ class Code11BarcodeGenerator extends LinearBarcodeGenerator
 
         $minWidth = $this->minWidthForData();
         $bmp = Bitmap::createBitmap($minWidth, 1);
-        self::renderPatternToBitmap($bmp, self::TerminatorPattern, self::TerminatorPatternBits, 0);
-        $x = self::TerminatorPatternBits;
+        self::renderPatternToBitmap($bmp, 0, self::QuietZoneExtent, 0);
+        $x = self::QuietZoneExtent;
+        self::renderPatternToBitmap($bmp, self::TerminatorPattern, self::TerminatorPatternBits, $x);
+        $x += self::TerminatorPatternBits;
 
         foreach ($this->getDigitIndices() as $digitIndex) {
             $bmp->setPixel($x, 0, Colour::WHITE);    // spacer before digit
@@ -173,7 +180,9 @@ class Code11BarcodeGenerator extends LinearBarcodeGenerator
 
         $bmp->setPixel($x, 0, Colour::WHITE);    // spacer after final digit
         ++$x;
-        self::renderPatternToBitmap($bmp, self::TerminatorPattern, self::TerminatorPatternBits, 0);
+        self::renderPatternToBitmap($bmp, self::TerminatorPattern, self::TerminatorPatternBits, $x);
+        $x += self::TerminatorPatternBits;
+        self::renderPatternToBitmap($bmp, 0, self::QuietZoneExtent, $x);
         return Bitmap::createScaledBitmap($bmp, max($size->width, $minWidth), $size->height, false);
     }
 }
