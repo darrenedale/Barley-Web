@@ -5,8 +5,15 @@ namespace App\Generators;
 use App\Exceptions\BarcodeGeneratorNotFoundException;
 use FilesystemIterator;
 use Illuminate\Support\Facades\Log;
+use InvalidArgumentException;
 
-class GeneratorFactory
+/**
+ * Factory to produce BarcodeGenerator instances based on their identifier strings.
+ *
+ * The factory is able to auto-load from given paths and discover any BarcodeGenerator subclasses therein. Currently it
+ * only looks inside its own directory.
+ */
+class GeneratorFactory implements GeneratorFactoryInterface
 {
     /**
      * Paths to search for generators. Key is the fs path, value is the namespace for generator classes in that path.
@@ -43,6 +50,8 @@ class GeneratorFactory
     /**
      * Check whether the barcode generators in the configured paths have been discovered.
      *
+     * This also returns true if the generators are in the process of being discovered.
+     *
      * @return bool true if they have, false otherwise.
      */
     protected function generatorsDiscovered(): bool
@@ -63,12 +72,24 @@ class GeneratorFactory
     }
 
     /**
+     * Set the generator class to use for a given type.
+     *
+     * The provided generator will be used for the provided type. If a generator for the type is already set, it will
+     * be replaced. The provided class name must identify a subclass of BarcodeGenerator
+     *
      * @param string $type The barcode type identifier.
      * @param string $generatorClass The fully-qualified class name of the generator for the type.
+     *
+     * @throws InvalidArgumentException if the provided class is not a BarcodeGenerator subclass.
      */
     public function setGenerator(string $type, string $generatorClass): void
     {
         $this->ensureGeneratorsDiscovered();
+
+        if (!is_subclass_of($generatorClass, BarcodeGenerator::class, true)) {
+            throw new InvalidArgumentException("Class '{$generatorClass}' from is not a BarcodeGenerator subclass");
+        }
+
         $this->m_generators[$type] = $generatorClass;
     }
 
@@ -77,7 +98,7 @@ class GeneratorFactory
      *
      * @param string $type The type.
      *
-     * @return string|null The generator class name (including namespace), or null if no genrator is available for the
+     * @return string|null The generator class name (including namespace), or null if no generator is available for the
      * barcode type.
      */
     public function generatorClass(string $type): ?string
@@ -108,20 +129,27 @@ class GeneratorFactory
      */
     public function hasGeneratorFor(string $type): bool
     {
+        $this->ensureGeneratorsDiscovered();
         return isset($this->m_generators[$type]);
     }
 
     /**
-     * Must not be called before m_generators has been initialised.
+     * Helper to attempt to load a BarcodeGenerator subclass from a file.
+     *
+     * This must not be called before m_generators has been initialised.
      *
      * @param \SplFileInfo $file The file to load.
      * @param string $namespace The namespace the generator class is expected to be in.
+     * @param bool $override Whether the loaded class should override any previous BarcodeGenerator class that lays
+     * claim to the same identifier.
      *
-     * @return bool Whether or not loading a generator class from the provided file succeeded.
+     * @return bool Whether loading a generator class from the provided file succeeded. When the file contains a
+     * BarcodeGenerator but it is not used because the type identifier it provides is already in use and $override is
+     * false, the return value is false.
      */
     public function loadGeneratorClass(\SplFileInfo $file, string $namespace, bool $override = false): bool
     {
-        $className = "{$namespace}\\{$file->getBasename()}";
+        $className = "{$namespace}\\{$file->getBasename(".php")}";
         include_once($file->getPathname());
 
         if (!class_exists($className)) {
@@ -129,7 +157,7 @@ class GeneratorFactory
             return false;
         }
 
-        if (!is_a($className, BarcodeGenerator::class)) {
+        if (!is_subclass_of($className, BarcodeGenerator::class, true)) {
             Log::debug("Discovered class '{$className}' from '{$file->getPathname()}' is not a BarcodeGenerator");
             return false;
         }
@@ -146,14 +174,14 @@ class GeneratorFactory
     }
 
     /**
-     * Must not be called before m_generators has been initialised.
+     * Helper to scan a given path for BarcodeGenerator classes.
      *
-     * @param string $path
-     * @param string $namespace
+     * This must not be called before the m_generators member has been initialised.
      *
-     * @return void
+     * @param string $path The path to scan for BarcodeGenerator classes.
+     * @param string $namespace The namespace the classes are expected to be in.
      */
-    protected function discoverGeneratorsForPath(string $path, string $namespace): void
+    protected function discoverGeneratorsInPath(string $path, string $namespace): void
     {
         /** @var \SplFileInfo $file */
         foreach (new FilesystemIterator($path) as $file) {
@@ -166,27 +194,29 @@ class GeneratorFactory
                     Log::error("file {$file->getPathname()} did not contain a BarcodeGenerator in the {$namespace} namespace.");
                 }
             } catch (\Throwable $e) {
-                Log::error("exception loading Generator class {$namespace}\\{$file->getBasename()} from {$file->getPathname()}: {$e->getMessage()}.");
+                Log::error("exception loading Generator class {$namespace}\\{$file->getBasename(".php")} from {$file->getPathname()}: {$e->getMessage()}.");
             }
         }
     }
 
     /**
      * Helper to load generators from the set paths.
-     *
-     * @return void
      */
     protected function discoverGenerators(): void
     {
         $this->m_generators = [];
 
         foreach ($this->searchPaths() as $path => $namespace) {
-            $this->discoverGeneratorsForPath($path, $namespace);
+            $this->discoverGeneratorsInPath($path, $namespace);
         }
     }
 
     /**
      * Get a generator for a given type of barcode.
+     *
+     * This method is intended for use with the facade, for example:
+     *
+     *     $bmp = BarcodeGenerator::generate("code128")->widthData("fizzbuzz")->atSize(new Size(500, 250))->getBitmap();
      *
      * @param string $type The barcode type for which a generator is required.
      *

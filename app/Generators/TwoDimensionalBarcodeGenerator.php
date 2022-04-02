@@ -4,6 +4,12 @@ namespace App\Generators;
 
 use App\Util\Size;
 
+/**
+ * Abstract base class for two-dimensional bar codes.
+ *
+ * It provides a base implementation of closestIdealSizeTo() which ensures that the size's width and height are integer
+ * multiples of the minimum width and height respectively.
+ */
 abstract class TwoDimensionalBarcodeGenerator extends BarcodeGenerator
 {
     /**

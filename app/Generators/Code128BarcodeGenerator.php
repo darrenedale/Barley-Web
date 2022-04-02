@@ -2,6 +2,7 @@
 
 namespace App\Generators;
 
+use App\Exceptions\InvalidDimensionException;
 use App\Util\Bitmap;
 use App\Util\Size;
 
@@ -219,6 +220,14 @@ class Code128BarcodeGenerator extends LinearBarcodeGenerator
      * At other times, this is null.
      */
     private mixed $m_renderState;
+
+    /**
+     * @return string "code128"
+     */
+    public static function typeIdentifier(): string
+    {
+        return "code128";
+    }
 
     /**
      * Check whether a string can be encoded as a Code128 barcode.
@@ -649,9 +658,17 @@ class Code128BarcodeGenerator extends LinearBarcodeGenerator
      * @param $size ?Size the desired size of the bitmap.
      *
      * @return Bitmap The generated bitmap.
+     * @throws \App\Exceptions\InvalidDimensionException if either of the dimensions in the requested bitmap size is
+     * < 1.
      */
-    public function getBitmap(?Size $size): Bitmap
+    public function getBitmap(?Size $size = null): Bitmap
     {
+        if (!isset($size)) {
+            $size = $this->size();
+        } else {
+            $this->validateSize($size);
+        }
+
         $minWidth = $this->minimumSize()->width;
         $this->startRender(Bitmap::createBitmap($minWidth, 1));
         $this->renderBarcode();

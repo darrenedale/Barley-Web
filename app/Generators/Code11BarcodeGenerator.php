@@ -2,14 +2,18 @@
 
 namespace App\Generators;
 
+use App\Exceptions\InvalidDimensionException;
 use App\Util\Bitmap;
 use App\Util\Colour;
 use App\Util\Size;
 use JetBrains\PhpStorm\Pure;
-use RuntimeException;
 
+/**
+ * Generator for linear barcodes using Code 11 format.
+ */
 class Code11BarcodeGenerator extends LinearBarcodeGenerator
 {
+    // the full set of digits that Code 11 can encode
     public const ValidDigits = "0123456789-";
 
     // The pattern at the start and end of the barcode
@@ -33,14 +37,37 @@ class Code11BarcodeGenerator extends LinearBarcodeGenerator
             0b101101,       // -
     ];
 
-// How many bits in the pattern represent a line or gap for each supported digit
-const DigitPatternBits = [6, 7, 7, 7, 7, 7, 7, 7, 7, 6, 6,];
+    // How many bits in the pattern represent a line or gap for each supported digit
+    const DigitPatternBits = [6, 7, 7, 7, 7, 7, 7, 7, 7, 6, 6,];
 
+    /**
+     * @return string "code11"
+     */
+    public static function typeIdentifier(): string
+    {
+        return "code11";
+    }
+
+    /**
+     * Check whether a digit can be encoded in a Code 11 barcode.
+     *
+     * @param string $digit A single-character string to check.
+     *
+     * @return bool true if the digit can be encoded, false if not.
+     */
     public static function isValidDigit(string $digit): bool
     {
+        assert(1 === strlen($digit), "isValidDigit() requires a single-character string as its only argument.");
         return str_contains(self::ValidDigits, $digit);
     }
 
+    /**
+     * Check whether Code11 can encode a given string as a barcode.
+     *
+     * @param string $data The data to check.
+     *
+     * @return bool true if the data can be encoded, false otherwise.
+     */
     #[Pure] public static function typeCanEncode(string $data): bool
     {
         for ($idx = strlen($data) - 1; 0 <= $idx; --$idx) {
@@ -52,11 +79,23 @@ const DigitPatternBits = [6, 7, 7, 7, 7, 7, 7, 7, 7, 6, 6,];
         return true;
     }
 
+    /**
+     * The minimum size of bitmap required for the generator's current data.
+     *
+     * The height is always 1. The width is determined by the data to encode.
+     *
+     * @return \App\Util\Size The minimum size.
+     */
     public function minimumSize(): Size
     {
         return new Size($this->minWidthForData(), 1);
     }
 
+    /**
+     * Helper to calculate the minimum bitmap width required to accurately encode the current data.
+     *
+     * @return int The minimum width.
+     */
     #[Pure] private function minWidthForData(): int
     {
         $min = 2 * self::TerminatorPatternBits;
@@ -75,6 +114,14 @@ const DigitPatternBits = [6, 7, 7, 7, 7, 7, 7, 7, 7, 6, 6,];
         return $min;
     }
 
+    /**
+     * Helper to convert the current data to an array of digit indices.
+     *
+     * The indices in the returned array can be used with the DigitPatterns array to get the patterns to render into the
+     * bitmap.
+     *
+     * @return array<int> The indices of the digits in the current data.
+     */
     #[Pure] private function getDigitIndices(): array
     {
         $data = str_split($this->data());
@@ -90,44 +137,43 @@ const DigitPatternBits = [6, 7, 7, 7, 7, 7, 7, 7, 7, 6, 6,];
         return $data;
     }
 
-    private static function drawTerminator(Bitmap $bmp, int $offset = 0): void
+    /**
+     * Get a bitmap of the data encoded as a Code 11 barcode.
+     *
+     * The returned bitmap may be wider than the requested size if the barcode can't be accurately rendered with the
+     * requested width.
+     *
+     * @param \App\Util\Size|null $size The optional size for the final bitmap. Defaults to the size set in the
+     * generator.
+     *
+     * @return \App\Util\Bitmap The bitmap.
+     * @throws \App\Exceptions\InvalidDimensionException if either of the dimensions in the requested bitmap size is
+     * < 1.
+     */
+    public function getBitmap(?Size $size = null): Bitmap
     {
-        $mask = 1 << (self::TerminatorPatternBits - 1);
-
-        for ($idx = 0; $idx < self::TerminatorPatternBits; ++$idx) {
-            $bmp->setPixel($offset + $idx, 0, (0 != (self::TerminatorPattern & $mask) ? Colour::BLACK : Colour::WHITE));
-            $mask >>= 1;
-        }
-    }
-
-    public function getBitmap(?Size $size): Bitmap
-    {
-        if (1 > $size->width || 1 > $size->height) {
-            throw new RuntimeException("Invalid bitmap size.");
+        if (!isset($size)) {
+            // instance size can't be set to an invalid value
+            $size = $this->size();
+        } else {
+            $this->validateSize($size);
         }
 
         $minWidth = $this->minWidthForData();
-
         $bmp = Bitmap::createBitmap($minWidth, 1);
-        $this->drawTerminator($bmp);
+        self::renderPatternToBitmap($bmp, self::TerminatorPattern, self::TerminatorPatternBits, 0);
         $x = self::TerminatorPatternBits;
 
         foreach ($this->getDigitIndices() as $digitIndex) {
             $bmp->setPixel($x, 0, Colour::WHITE);    // spacer before digit
             ++$x;
-            $mask = 1 << (self::DigitPatternBits[$digitIndex] - 1);
-            $digit = self::DigitPatterns[$digitIndex];
-
-            for ($bit = 0; $bit < self::DigitPatternBits[$digitIndex]; ++$bit) {
-                $bmp->setPixel($x, 0, (0 != ($digit & $mask) ? Colour::BLACK : Colour::WHITE));
-                ++$x;
-                $mask >>= 1;
-            }
+            self::renderPatternToBitmap($bmp, self::DigitPatterns[$digitIndex], self::DigitPatternBits[$digitIndex], $x);
+            $x += self::DigitPatternBits[$digitIndex];
         }
 
         $bmp->setPixel($x, 0, Colour::WHITE);    // spacer after final digit
         ++$x;
-        $this->drawTerminator($bmp, $x);
+        self::renderPatternToBitmap($bmp, self::TerminatorPattern, self::TerminatorPatternBits, 0);
         return Bitmap::createScaledBitmap($bmp, max($size->width, $minWidth), $size->height, false);
     }
 }

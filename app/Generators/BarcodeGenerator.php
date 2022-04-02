@@ -2,10 +2,15 @@
 
 namespace App\Generators;
 
+use App\Exceptions\InvalidDimensionException;
 use \App\Util\Size;
 use \App\Util\Bitmap;
+use Exception;
 use JetBrains\PhpStorm\Pure;
 
+/**
+ * Abstract base class of all barcode generators.
+ */
 abstract class BarcodeGenerator
 {
     /**
@@ -28,15 +33,13 @@ abstract class BarcodeGenerator
 
     /**
      * Default initialise a new generator.
-     *
-     * Only available to subclasses - this is an abstract base class.
      */
-    protected function __constructor(Size | string $dataOrSize = "", Size $size = null)
+    public function __construct(Size | string $dataOrSize = "", Size $size = null)
     {
         if (is_string($dataOrSize)) {
             $data = $dataOrSize;
 
-            if (!$size) {
+            if (!isset($size)) {
                 $size = self::defaultSize();
             }
         } else {
@@ -46,6 +49,15 @@ abstract class BarcodeGenerator
 
         $this->setData($data);
         $this->setSize($size);
+    }
+
+    /**
+     * @return string
+     * @throws \Exception
+     */
+    public static function typeIdentifier(): string
+    {
+        throw new Exception("BarcodeGenerator subclass has not correctly reimplemented the typeIdentifier() static method");
     }
 
     /**
@@ -77,6 +89,34 @@ abstract class BarcodeGenerator
     public function canEncode(string $data): bool
     {
         return static::typeCanEncode($data);
+    }
+
+    /**
+     * Fluent interface to set the data to encode.
+     *
+     * @param string $data The data to encode.
+     *
+     * @return $this The instance for method chaining.
+     * @throws \InvalidArgumentException if the data cannot be encoded by the generator.
+     */
+    public function withData(string $data): self
+    {
+        $this->setData($data);
+        return $this;
+    }
+
+    /**
+     * Fluent interface to set the size at which the genrator should render a bitmap of the barcode.
+     *
+     * @param \App\Util\Size $size The desired size.
+     *
+     * @return $this The instance for method chaining.
+     * @throws \App\Exceptions\InvalidDimensionException
+     */
+    public function atSize(Size $size): self
+    {
+        $this->setSize($size);
+        return $this;
     }
 
     /**
@@ -129,12 +169,16 @@ abstract class BarcodeGenerator
      *
      * @param $size Size The desired size.
      *
-     * @throws \InvalidArgumentException if the size has either dimension < 1.
+     * @throws InvalidDimensionException if the size has either dimension < 1.
      */
     public function setSize(Size $size): void
     {
-        if (1 > $size->width || 1 > $size->height) {
-            throw new \InvalidArgumentException("Size must have positive width and height.");
+        if (1 > $size->width) {
+            throw new InvalidDimensionException($size->width, "width", "Size must have positive width.");
+        }
+
+        if (1 > $size->height) {
+            throw new InvalidDimensionException($size->height, "height", "Size must have positive height.");
         }
 
         $this->m_size = $size;
@@ -156,5 +200,22 @@ abstract class BarcodeGenerator
      *
      * @return Bitmap The generated bitmap.
      */
-    public abstract function getBitmap(?Size $size): Bitmap;
+    public abstract function getBitmap(?Size $size = null): Bitmap;
+
+    /**
+     * @param \App\Util\Size $size
+     *
+     * @return void
+     * @throws \App\Exceptions\InvalidDimensionException
+     */
+    protected function validateSize(Size $size): void
+    {
+        if (1 > $size->width) {
+            throw new InvalidDimensionException($size->width, "width", "Bitmap width must be >= 1.");
+        }
+
+        if (1 > $size->height) {
+            throw new InvalidDimensionException($size->height, "height", "Bitmap height must be >= 1.");
+        }
+    }
 }

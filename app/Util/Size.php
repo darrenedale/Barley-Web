@@ -20,7 +20,7 @@ class Size
      */
     public int $height;
 
-    public function __constructor(Size | int $sizeOrWidth = null, int $height = null)
+    public function __construct(Size | int $sizeOrWidth = null, int $height = null)
     {
         if ($sizeOrWidth instanceof Size) {
             $this->initialiseFromSize($sizeOrWidth);

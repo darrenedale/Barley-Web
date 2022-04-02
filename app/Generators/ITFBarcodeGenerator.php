@@ -2,13 +2,13 @@
 
 namespace App\Generators;
 
+use App\Exceptions\InvalidDimensionException;
 use App\Util\Bitmap;
 use App\Util\Size;
-use Illuminate\Support\Str;
 use JetBrains\PhpStorm\Pure;
 
 /**
- * Generate an ITF barcode.
+ * Generator for linear barcodes in ITF format.
  *
  * This generates an interleaved 2 of 5 barcode for numeric data. Data with an odd number of digits
  * are left-padded with a single 0; therefore, barcodes always contain an even number of digits.
@@ -91,6 +91,14 @@ class ITFBarcodeGenerator extends LinearBarcodeGenerator
     protected static array $pairPatterns = [];
 
     /**
+     * @return string "itf"
+     */
+    public static function typeIdentifier(): string
+    {
+        return "itf";
+    }
+
+    /**
      * Check whether a character is a digit that can be encoded in an ITF barcode.
      *
      * @param $ch string The character to check. Must be exactly 1 character.
@@ -131,12 +139,13 @@ class ITFBarcodeGenerator extends LinearBarcodeGenerator
      * @return Size The minimum size.
      */
     #[Pure] public function minimumSize(): Size
-{
-        $length = strlen($this->data());
+    {
+        // +1 for the check digit
+        $length = strlen($this->data()) + 1;
 
         // round up length to nearest multiple of 2 since we'll pad to the left with '0' if it has an odd number of
-        // digits. +1 for the check digit
-        return new Size(((1 + $length + ($length % 2)) * self::DigitExtent) + (2 * self::QuietZoneExtent) + self::StartPatternExtent + self::StopPatternExtent, 1);
+        // digits.
+        return new Size((($length + ($length % 2)) * self::DigitExtent) + (2 * self::QuietZoneExtent) + self::StartPatternExtent + self::StopPatternExtent, 1);
     }
 
     /**
@@ -189,14 +198,22 @@ class ITFBarcodeGenerator extends LinearBarcodeGenerator
      * @param $size Size | null the desired size of the bitmap.
      *
      * @return Bitmap The generated bitmap.
+     * @throws \App\Exceptions\InvalidDimensionException if either of the dimensions in the requested bitmap size is
+     * < 1.
      */
-    public function getBitmap(?Size $size): Bitmap
+    public function getBitmap(?Size $size = null): Bitmap
     {
+        if (!isset($size)) {
+            $size = $this->size();
+        } else {
+            $this->validateSize($size);
+        }
+
         $minWidth = $this->minimumSize()->width;
         $bitmap = Bitmap::createBitmap($minWidth, 1);
         $data = $this->data();
 
-        if (1 === strlen($data) % 2) {
+        if (0 === strlen($data) % 2) {
             $data = "0{$data}";
         }
 
@@ -206,7 +223,10 @@ class ITFBarcodeGenerator extends LinearBarcodeGenerator
         $x += self::StartPatternExtent;
         $checksum = 0;
 
-        for ($idx = 0; $idx < strlen($data); $idx += 2) {
+        // don't include the last digit in the loop - it's paired with the check digit
+        $length = strlen($data) - 1;
+
+        for ($idx = 0; $idx < $length; $idx += 2) {
             $digit1 = ord($data[$idx]) - ord('0');
             $digit2 = ord($data[$idx + 1]) - ord('0');
             self::renderPatternToBitmap($bitmap, self::getDigitPairPattern($digit1, $digit2), 2 * self::DigitExtent, $x);
@@ -214,14 +234,13 @@ class ITFBarcodeGenerator extends LinearBarcodeGenerator
             $checksum += ($digit1 * 3) + $digit2;
         }
 
+        // final digit pair is final digit and checksum digit
+        $digit1 = ord($data[strlen($data) - 1]) - ord('0');
+        $checksum += ($digit1 * 3);
         $checksum %= 10;
-
-        if (0 === $checksum) {
-            self::renderPatternToBitmap($bitmap, self::DigitPatterns[$checksum], self::DigitExtent, $x);
-        } else {
-            self::renderPatternToBitmap($bitmap, self::DigitPatterns[10 - $checksum], self::DigitExtent, $x);
-        }
-
+        $digit2 = (0 === $checksum ? 0 : 10 - $checksum);
+        self::renderPatternToBitmap($bitmap, self::getDigitPairPattern($digit1, $digit2), 2 * self::DigitExtent, $x);
+        $x += 2 * self::DigitExtent;
         self::renderPatternToBitmap($bitmap, self::StopPattern, self::StopPatternExtent, $x);
         $x += self::StopPatternExtent;
         self::renderPatternToBitmap($bitmap, 0, self::QuietZoneExtent, $x);

@@ -6,6 +6,14 @@ use App\Util\Bitmap;
 use App\Util\Size;
 use App\Util\Colour as Color;
 
+/**
+ * Abstract base class for barcode generators that generate linear barcodes.
+ *
+ * It provides a base implementation of closestIdealSizeTo() which ensures that the size's width is an integer multiple
+ * of the minimum width. It also provides a helper to render patterns to Bitmap objects that can be used when your
+ * rendering strategy in getBitmap() is to render a minimum-size bitmap (where one thin bar is one pixel wide) and scale
+ * it up before returning.
+ */
 abstract class LinearBarcodeGenerator extends BarcodeGenerator
 {
     /**

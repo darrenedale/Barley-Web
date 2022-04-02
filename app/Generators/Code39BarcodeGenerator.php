@@ -2,12 +2,15 @@
 
 namespace App\Generators;
 
+use App\Exceptions\InvalidDimensionException;
 use App\Util\Bitmap;
 use App\Util\Colour;
 use App\Util\Size;
 use JetBrains\PhpStorm\Pure;
-use RuntimeException;
 
+/**
+ * Generator for linear barcodes using Code 39 format.
+ */
 class Code39BarcodeGenerator extends LinearBarcodeGenerator
 {
     // The CODE39 dictionary
@@ -66,11 +69,34 @@ class Code39BarcodeGenerator extends LinearBarcodeGenerator
     // How many bits in each digit pattern
     public const PatternBits = 12;
 
+    /**
+     * @return string "code39"
+     */
+    public static function typeIdentifier(): string
+    {
+        return "code39";
+    }
+
+    /**
+     * Check whether a digit can be encoded in a Code 39 barcode.
+     *
+     * @param string $digit A single-character string to check.
+     *
+     * @return bool true if the digit can be encoded, false if not.
+     */
     public static function isValidDigit(string $digit): bool
     {
+        assert(1 === strlen($digit), "isValidDigit() requires a single-character string as its only argument.");
         return str_contains(self::ValidDigits, $digit);
     }
 
+    /**
+     * Check whether Code39 can encode a given string as a barcode.
+     *
+     * @param string $data The data to check.
+     *
+     * @return bool true if the data can be encoded, false otherwise.
+     */
     #[Pure] public static function typeCanEncode(string $data): bool
     {
         for ($idx = strlen($data) - 1; 0 <= $idx; --$idx) {
@@ -82,11 +108,23 @@ class Code39BarcodeGenerator extends LinearBarcodeGenerator
         return true;
     }
 
+    /**
+     * The minimum size of bitmap required for the generator's current data.
+     *
+     * The height is always 1. The width is determined by the data to encode.
+     *
+     * @return \App\Util\Size The minimum size.
+     */
     #[Pure] public function minimumSize(): Size
     {
         return new Size($this->minWidthForData(), 1);
     }
 
+    /**
+     * Helper to calculate the minimum bitmap width required to accurately encode the current data.
+     *
+     * @return int The minimum width.
+     */
     #[Pure] private function minWidthForData(): int
     {
         $digitCount = strlen($this->data());
@@ -96,9 +134,12 @@ class Code39BarcodeGenerator extends LinearBarcodeGenerator
     }
 
     /**
-     * Convert the data into indices into the DigitPatterns array.
+     * Helper to convert the current data to an array of digit indices.
      *
-     * @return array<int> The array of indices.
+     * The indices in the returned array can be used with the DigitPatterns array to get the patterns to render into the
+     * bitmap.
+     *
+     * @return array<int> The indices of the digits in the current data.
      */
     #[Pure] private function getDigitIndices(): array
     {
@@ -129,26 +170,31 @@ class Code39BarcodeGenerator extends LinearBarcodeGenerator
         return $data;
     }
 
-    private static function drawTerminator(Bitmap $bmp, int $offset = 0): void
+    /**
+     * Get a bitmap of the data encoded as a Code 39 barcode.
+     *
+     * The returned bitmap may be wider than the requested size if the barcode can't be accurately rendered with the
+     * requested width.
+     *
+     * @param \App\Util\Size|null $size The optional size for the final bitmap. Defaults to the size set in the
+     * generator.
+     *
+     * @return \App\Util\Bitmap The bitmap.
+     * @throws \App\Exceptions\InvalidDimensionException if either of the dimensions in the requested bitmap size is
+     * < 1.
+     */
+    public function getBitmap(?Size $size = null): Bitmap
     {
-        $mask = 1 << (self::PatternBits - 1);
-
-        for ($idx = 0; $idx < self::PatternBits; ++$idx) {
-            $bmp->setPixel($offset + $idx, 0, (0 != (self::TerminatorPattern & $mask) ? Colour::BLACK : Colour::WHITE));
-            $mask >>= 1;
-        }
-    }
-
-    public function getBitmap(?Size $size): Bitmap
-    {
-        if (1 > $size->width || 1 > $size->height) {
-            throw new RuntimeException("Invalid bitmap size.");
+        if (!isset($size)) {
+            $size = $this->size();
+        } else {
+            $this->validateSize($size);
         }
 
         $minWidth = $this->minWidthForData();
 
         $bmp = Bitmap::createBitmap($minWidth, 1);
-        $this->drawTerminator($bmp);
+        self::renderPatternToBitmap($bmp, self::TerminatorPattern, self::PatternBits, 0);
         $x = self::PatternBits;
 
         foreach ($this->getDigitIndices() as $digitIndex) {
@@ -166,7 +212,7 @@ class Code39BarcodeGenerator extends LinearBarcodeGenerator
 
         $bmp->setPixel($x, 0, Colour::WHITE);    // spacer after final digit
         ++$x;
-        $this->drawTerminator($bmp, $x);
+        self::renderPatternToBitmap($bmp, self::TerminatorPattern, self::PatternBits, $x);
         return Bitmap::createScaledBitmap($bmp, max($size->width, $minWidth), $size->height, false);
     }
 }
