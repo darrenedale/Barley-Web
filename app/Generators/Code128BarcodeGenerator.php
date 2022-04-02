@@ -340,7 +340,7 @@ class Code128BarcodeGenerator extends LinearBarcodeGenerator
         $end = $start;
         $length = strlen($data);
 
-        while ($end < $length && false != strpos(self::CodesetACharacters, $data[$end])) {
+        while ($end < $length && str_contains(self::CodesetACharacters, $data[$end])) {
             ++$end;
         }
 
@@ -367,7 +367,7 @@ class Code128BarcodeGenerator extends LinearBarcodeGenerator
         $end = $start;
         $length = strlen($data);
 
-        while ($end < $length && false != strpos(self::CodesetBCharacters, $data[$end])) {
+        while ($end < $length && str_contains(self::CodesetBCharacters, $data[$end])) {
             ++$end;
         }
 
