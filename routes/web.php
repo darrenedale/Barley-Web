@@ -16,3 +16,9 @@ use Illuminate\Support\Facades\Route;
 Route::get("/", function () {
     return view("home");
 });
+
+Route::get("/barcode-image/{type}/{data}/{format?}/{width?}/{height?}", [\App\Http\Controllers\BarcodeImageController::class, "getBarcodeImage"])
+    ->where(["width" => "[1-9][0-9]*", "height" => "[1-9][0-9]*", ]);
+
+Route::post("/barcode-image/{type}/{format?}/{width?}/{height?}", [\App\Http\Controllers\BarcodeImageController::class, "getBarcodeImage"])
+    ->where(["width" => "[1-9][0-9]*", "height" => "[1-9][0-9]*", ]);

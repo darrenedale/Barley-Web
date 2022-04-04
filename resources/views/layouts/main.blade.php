@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <html>
 <head>
-
+@stack("styles")
+@stack("scripts")
 </head>
 <body>
 <header>
