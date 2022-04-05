@@ -15,18 +15,28 @@ use InvalidArgumentException;
 
 class BarcodeImageController extends Controller
 {
+    public const PlaceholderImagePath = "images/barcode-placeholder.svg";
     public const DefaultImageWidth = 500;
     public const DefaultImageAspectRatio = 2;
     public const DefaultImageFormat = BitmapOutputFormat::Png;
 
-    public function getPlaceholderBarcodeImage(): RedirectResponse
+    /**
+     * Send the placeholder barcode image.
+     *
+     * This is implemented as a redirect to the URL of the placeholder image.
+     *
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function placeholderBarcodeImage(): RedirectResponse
     {
-        // TODO stream the placeholder image (or redirect?)
-        return redirect()->to("images/placeholder-barcode.png");
+        return redirect()->to(self::PlaceholderImagePath);
     }
 
     /**
-     * If the data is null, it is assumed to be in the request's POST data.
+     * Generate a barcode image.
+     *
+     * If the data is null, it is assumed to be in the request's POST data. The data sent in the response is image data
+     * not HTML. The image format depends on the format specified in the $format argument.
      *
      * @param \Illuminate\Http\Request $request
      * @param string $type
@@ -35,12 +45,12 @@ class BarcodeImageController extends Controller
      * @param int $width
      * @param int|null $height
      *
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\Response|\Illuminate\Http\RedirectResponse
      */
-    public function getBarcodeImage(Request $request, string $type, ?string $data = null, string | BitmapOutputFormat $format = self::DefaultImageFormat, int $width = self::DefaultImageWidth, int $height = null): Response | RedirectResponse
+    public function barcodeImage(Request $request, string $type, ?string $data = null, string | BitmapOutputFormat $format = self::DefaultImageFormat, int $width = self::DefaultImageWidth, int $height = null): Response | RedirectResponse
     {
         if (!BarcodeGenerator::hasGeneratorFor($type)) {
-            return $this->getPlaceholderBarcodeImage();
+            return $this->placeholderBarcodeImage();
         }
 
         if(is_string($format)) {
@@ -58,8 +68,7 @@ class BarcodeImageController extends Controller
             $data = $request->post("data");
 
             if (!isset($data)) {
-                // TODO invalid request - no data
-                return $this->getPlaceholderBarcodeImage();
+                return $this->placeholderBarcodeImage();
             }
         }
 
@@ -76,10 +85,10 @@ class BarcodeImageController extends Controller
                 ->getBitmap(), $format);
         } catch (InvalidDimensionException) {
             // invalid image size
-            return $this->getPlaceholderBarcodeImage();
+            return $this->placeholderBarcodeImage();
         } catch (InvalidDataException) {
             // barcode type can't encode provided data
-            return $this->getPlaceholderBarcodeImage();
+            return $this->placeholderBarcodeImage();
         }
     }
 }

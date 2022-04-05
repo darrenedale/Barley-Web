@@ -2,7 +2,13 @@
 
 namespace App\Providers;
 
+use App\Http\Auth\UserProvider;
+use App\Models\Barcode;
+use App\Models\User;
+use App\Policies\BarcodePolicy;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
+use Illuminate\Support\Facades\App;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 
 class AuthServiceProvider extends ServiceProvider
@@ -14,6 +20,7 @@ class AuthServiceProvider extends ServiceProvider
      */
     protected $policies = [
         // 'App\Models\Model' => 'App\Policies\ModelPolicy',
+        Barcode::class => BarcodePolicy::class,
     ];
 
     /**
@@ -24,7 +31,6 @@ class AuthServiceProvider extends ServiceProvider
     public function boot()
     {
         $this->registerPolicies();
-
-        //
+        Auth::provider("barley", fn() => new UserProvider(App::make("hash"), config("auth.providers.users.model")));
     }
 }
