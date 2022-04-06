@@ -4,7 +4,6 @@ namespace App\Console\Commands;
 
 use App\Rules\Password as PasswordRule;
 use App\Rules\Username as UsernameRule;
-use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use App\Models\User;
@@ -13,11 +12,30 @@ use Illuminate\Validation\ValidationException;
 class CreateUser extends Command
 {
     /**
+     * Exit code when one or more of the command-line arguments is not valid.
+     */
+    public const ErrInvalidArguments = 1;
+
+    /**
+     * Exit code when the provided password does not meet the password strength rules.
+     */
+    public const ErrInvalidPassword = 2;
+
+    /**
+     * Exit code when the provided password confirmation does not match the provided password.
+     */
+    public const ErrPasswordMismatch = 3;
+
+    /**
      * The name and signature of the console command.
      *
      * @var string
      */
-    protected $signature = "make:barley-user {username} {name} {email}";
+    protected $signature = "make:barley-user
+            {--accept-any-password : Don't enforce password quality rules. Use EXTREMELY sparingly}
+            {username : The username for the new user. Must be unique.}
+            {name : The real name for the new user.}
+            {email : The email address for the new user. Must be unique.}";
 
     /**
      * The console command description.
@@ -50,21 +68,37 @@ class CreateUser extends Command
             "email.unique" => "The email address for the new user is already taken.",
         ]);
 
-        $validator->validate();
-        $data["password"] = $this->ask("New user's password: ");
-        $validator = Validator::make($data, [
-            "password" => [new PasswordRule(),],
-        ]);
+        if (!$validator->passes()) {
+            foreach ($validator->errors() as $parameter => $errors) {
+                $this->error("The {$parameter} is not valid:");
 
-        $validator->validate();
+                foreach ($errors as $error) {
+                    $this->error("   {$error}");
+                }
+            }
 
-        if ($data["password"] !== $this->ask("Confirm password: ")) {
-            throw new \RuntimeException("The passwords do not match.");
+            return self::ErrInvalidArguments;
+        }
+
+        $data["password"] = $this->secret("New user's password");
+
+        if (!$this->option("accept-any-password")) {
+            $validator = Validator::make($data, ["password" => [new PasswordRule(),],]);
+
+            if (!$validator->passes()) {
+                $this->error($validator->errors()->first("password"));
+                return self::ErrInvalidPassword;
+            }
+        }
+
+        if ($data["password"] !== $this->secret("Confirm password")) {
+            $this->error("The passwords do not match.");
+            return self::ErrPasswordMismatch;
         }
 
         $data["password"] = Hash::make($data["password"]);
         $user = User::create($data);
         $this->line("Created user {$user->id}");
-        return 0;
+        return self::ExitOk;
     }
 }

@@ -12,6 +12,21 @@ body
     margin-top: 0;
 }
 
+a
+{
+    color: #444;
+
+    &:visited
+    {
+        color: #555;
+    }
+
+    &:hover
+    {
+        color: #666;
+    }
+}
+
 input,
 textarea,
 select,
@@ -47,6 +62,14 @@ header {
         font-weight: normal;
     }
 
+    a, a:visited {
+        color: #bbb;
+
+        &:hover {
+            color: #888;
+        }
+    }
+
     .login-form form {
         display: flex;
         flex-flow: column;
@@ -65,6 +88,12 @@ header {
         button {
             width: 25%;
         }
+    }
+
+    .account-controls {
+        display: flex;
+        flex-flow: column;
+        align-items: flex-end;
     }
 }
 
