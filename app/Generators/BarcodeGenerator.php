@@ -2,6 +2,7 @@
 
 namespace App\Generators;
 
+use App\Exceptions\InvalidDataException;
 use App\Exceptions\InvalidDimensionException;
 use \App\Util\Size;
 use \App\Util\Bitmap;
@@ -97,7 +98,7 @@ abstract class BarcodeGenerator
      * @param string $data The data to encode.
      *
      * @return $this The instance for method chaining.
-     * @throws \InvalidArgumentException if the data cannot be encoded by the generator.
+     * @throws InvalidDataException if the data cannot be encoded by the generator.
      */
     public function withData(string $data): self
     {
@@ -111,7 +112,7 @@ abstract class BarcodeGenerator
      * @param \App\Util\Size $size The desired size.
      *
      * @return $this The instance for method chaining.
-     * @throws \App\Exceptions\InvalidDimensionException
+     * @throws InvalidDimensionException
      */
     public function atSize(Size $size): self
     {
@@ -143,12 +144,12 @@ abstract class BarcodeGenerator
      * Check with canEncode() first.
      *
      * @param $data string The data to encode.
-     * @throws \InvalidArgumentException if the data cannot be encoded by the generator.
+     * @throws InvalidDataException if the data cannot be encoded by the generator.
      */
     public function setData(string $data): void
     {
         if (!$this->canEncode($data)) {
-            throw new \InvalidArgumentException("Provided data cannot be encoded by " . static::class);
+            throw new InvalidDataException($data, static::class, "Provided data cannot be encoded by " . static::class);
         }
 
         $this->m_data = $data;

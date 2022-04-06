@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\BarcodeImageController;
+use App\Http\Controllers\LoginController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -13,6 +15,18 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::get('/', function () {
-    return view('welcome');
+// authentication
+Route::post("/login", [LoginController::class, "login",]);
+Route::get("/logout", [LoginController::class, "logout",]);
+
+// home page
+Route::get("/", function () {
+    return view("home");
 });
+
+// dynamic barcode image generation
+Route::get("/barcode-image/{type}/{data}/{format?}/{width?}/{height?}", [BarcodeImageController::class, "barcodeImage"])
+    ->where(["width" => "[1-9][0-9]*", "height" => "[1-9][0-9]*", ]);
+
+Route::post("/barcode-image/{type}/{format?}/{width?}/{height?}", [BarcodeImageController::class, "barcodeImage"])
+    ->where(["width" => "[1-9][0-9]*", "height" => "[1-9][0-9]*", ]);

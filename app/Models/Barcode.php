@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasManyThrough;
  * Model representing a barcode stored for a user in the database.
  *
  * @property int id
+ * @property int user_id
  * @property string name
  * @property string data
  * @property string generator

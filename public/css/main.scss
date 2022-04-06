@@ -1,0 +1,134 @@
+// this is just a quick and dirty first draft
+html
+{
+    padding: 0;
+}
+
+body
+{
+    width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 0;
+}
+
+input,
+textarea,
+select,
+button
+{
+    border: 1px solid #444;
+    border-radius: 2.5px;
+    background: #eee;
+    padding: 5px;
+}
+
+button {
+    cursor: pointer;
+
+    &:hover {
+        background-color: #ccc;
+    }
+}
+
+header {
+    box-sizing: border-box;
+    background-color: #444;
+    color: #eee;
+    padding: 30px;
+    height: 120px;
+    display: flex;
+    flex-flow: row;
+    align-items: center;
+    justify-content: space-between;
+
+    h1 {
+        font-size: 40px;
+        font-weight: normal;
+    }
+
+    .login-form form {
+        display: flex;
+        flex-flow: column;
+        align-items: flex-end;
+        max-width: 200px;
+        min-width: 100px;
+
+        input,
+        button {
+            box-sizing: border-box;
+            font-size: 12px;
+            width: 100%;
+            margin-top: 5px;
+        }
+
+        button {
+            width: 25%;
+        }
+    }
+}
+
+.barcode-details
+{
+    margin-top: 20px;
+    display: flex;
+    flex-flow: column;
+    align-items: center;
+    align-content: stretch;
+    background-color: #888;
+    padding: 20px;
+}
+
+barcode-details-widget::part(data-widget),
+barcode-details-widget::part(barcode-type-widget),
+.barcode-details button.generate-barcode
+{
+    margin-top: 10px;
+    margin-bottom: 10px;
+    box-sizing: border-box;
+    font-size: 20px;
+    border: 2px solid;
+}
+
+.barcode-details barcode-details-widget,
+.barcode-details button.generate-barcode
+{
+    width: 75%;
+}
+
+barcode-details-widget::part(data-widget),
+barcode-details-widget::part(barcode-type-widget)
+{
+    width: 100%;
+}
+
+.barcode-image-container
+{
+    margin-top: 20px;
+    padding: 20px;
+    display: flex;
+    flex-flow: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 200px;
+}
+
+.barcode-image
+{
+    box-sizing: border-box;
+    border: 8px solid;
+}
+
+.barley-error-field
+{
+    outline: 1px solid #ff4444;
+    background-color: #ffcccc;
+    border: 2px solid #444;
+}
+
+.barley-error
+{
+    font-size: 12px;
+    background-color: rgba(255, 255, 255, 0.1);
+    padding: 2px;
+}
