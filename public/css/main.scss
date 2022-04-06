@@ -23,18 +23,15 @@ button
     padding: 5px;
 }
 
-button
-{
+button {
     cursor: pointer;
+
+    &:hover {
+        background-color: #ccc;
+    }
 }
 
-button:hover
-{
-    background-color: #ccc;
-}
-
-header
-{
+header {
     box-sizing: border-box;
     background-color: #444;
     color: #eee;
@@ -44,35 +41,31 @@ header
     flex-flow: row;
     align-items: center;
     justify-content: space-between;
-}
 
-header h1
-{
-    font-size: 40px;
-    font-weight: normal;
-}
+    h1 {
+        font-size: 40px;
+        font-weight: normal;
+    }
 
-header .login-form form
-{
-    display: flex;
-    flex-flow: column;
-    align-items: flex-end;
-    max-width: 200px;
-    min-width: 100px;
-}
+    .login-form form {
+        display: flex;
+        flex-flow: column;
+        align-items: flex-end;
+        max-width: 200px;
+        min-width: 100px;
 
-header .login-form form input,
-header .login-form form button
-{
-    box-sizing: border-box;
-    font-size: 12px;
-    width: 100%;
-    margin-top: 5px;
-}
+        input,
+        button {
+            box-sizing: border-box;
+            font-size: 12px;
+            width: 100%;
+            margin-top: 5px;
+        }
 
-header .login-form form button
-{
-    width: 25%;
+        button {
+            width: 25%;
+        }
+    }
 }
 
 .barcode-details
