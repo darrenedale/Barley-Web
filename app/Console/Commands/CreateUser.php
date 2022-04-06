@@ -7,7 +7,6 @@ use App\Rules\Username as UsernameRule;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use App\Models\User;
-use Illuminate\Validation\ValidationException;
 
 class CreateUser extends Command
 {
