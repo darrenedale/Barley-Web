@@ -4,6 +4,7 @@
     <title>Barley</title>
     <link rel="stylesheet" type="text/css" href="css/main.css" />
 @stack("styles")
+    <script type="module" src="js/Main.js"></script>
 @stack("scripts")
 </head>
 <body>
@@ -13,8 +14,14 @@
     @if (\Illuminate\Support\Facades\Auth::check())
         <x-account.controls :user="\Illuminate\Support\Facades\Auth::user()" />
     @else
-        <x-account.login-form />
-        <x-account.registration-form />
+        <div>
+            <ul class="barley-login-selector">
+                <li data-form-type="registration">register</li>
+                <li data-form-ttype="login">log in</li>
+            </ul>
+            <x-account.login-form />
+            <x-account.registration-form />
+        </div>
     @endif
 </header>
 <section id="main-content" class="main-content">
