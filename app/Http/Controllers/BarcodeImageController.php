@@ -13,11 +13,29 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use InvalidArgumentException;
 
+/**
+ * Controller for routes that generate barcode images.
+ */
 class BarcodeImageController extends Controller
 {
+    /**
+     * The absolute path (from server root) to the barcode placeholder image.
+     */
     public const PlaceholderImagePath = "images/barcode-placeholder.svg";
+
+    /**
+     * The width for barcodes images if none is explicitly specified.
+     */
     public const DefaultImageWidth = 500;
+
+    /**
+     * The factor by which the width is larger than the height if no image height is explicityly specified.
+     */
     public const DefaultImageAspectRatio = 2;
+
+    /**
+     * The output format for barcode images if none is explicitly specified.
+     */
     public const DefaultImageFormat = BitmapOutputFormat::Png;
 
     /**

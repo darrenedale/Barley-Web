@@ -8,6 +8,11 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use App\Models\User;
 
+/**
+ * Command to interactively create a new Barley user from the console.
+ *
+ * You will be prompted for the new user's password.
+ */
 class CreateUser extends Command
 {
     /**
@@ -31,7 +36,7 @@ class CreateUser extends Command
      * @var string
      */
     protected $signature = "make:barley-user
-            {--accept-any-password : Don't enforce password quality rules. Use EXTREMELY sparingly}
+            {--accept-any-password : Don't enforce password quality rules. Use EXTREMELY sparingly.}
             {username : The username for the new user. Must be unique.}
             {name : The real name for the new user.}
             {email : The email address for the new user. Must be unique.}";
