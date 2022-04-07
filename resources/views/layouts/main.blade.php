@@ -14,6 +14,7 @@
         <x-account.controls :user="\Illuminate\Support\Facades\Auth::user()" />
     @else
         <x-account.login-form />
+        <x-account.registration-form />
     @endif
 </header>
 <section id="main-content" class="main-content">

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\BarcodeImageController;
 use App\Http\Controllers\LoginController;
+use App\Http\Controllers\RegistrationController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -18,6 +19,9 @@ use Illuminate\Support\Facades\Route;
 // authentication
 Route::post("/login", [LoginController::class, "login",]);
 Route::get("/logout", [LoginController::class, "logout",]);
+
+// registration
+Route::post("/register", [RegistrationController::class, "register",]);
 
 // home page
 Route::get("/", function () {
