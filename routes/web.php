@@ -18,6 +18,11 @@ use Illuminate\Support\Facades\Route;
 // authentication
 Route::post("/login", [LoginController::class, "login",]);
 Route::get("/logout", [LoginController::class, "logout",]);
+Route::get("/login/2fa", [LoginController::class, "showTwoFactorLoginForm",])
+    ->middleware("auth")
+    ->name("2fa.login");
+Route::post("/login/2fa", [LoginController::class, "secondFactorLogin",])
+    ->middleware("auth");
 
 // home page
 Route::get("/", function () {

@@ -4,11 +4,8 @@ namespace App\Util;
 
 class EightDigitTotp extends IntegerTotp
 {
-	/**
-	 * @inheritDoc
-	 */
-	public static function digits(): int
-	{
-        return 8;
-	}
+    public function __construct(string $seed, int $interval = self::DefaultInterval, DateTime|int $baseline = self::DefaultBaselineTime)
+    {
+        parent::__construct(8, $seed, $interval, $baseline);
+    }
 }

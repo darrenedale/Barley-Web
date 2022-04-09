@@ -2,10 +2,12 @@
 
 namespace App\Util;
 
+use DateTime;
+
 class SixDigitTotp extends IntegerTotp
 {
-    public static function digits(): int
+    public function __construct(string $seed, int $interval = self::DefaultInterval, DateTime|int $baseline = self::DefaultBaselineTime)
     {
-        return 6;
+        parent::__construct(6, $seed, $interval, $baseline);
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Util;
 
+use App\Exceptions\InvalidBase32DataException;
 use App\Exceptions\InvalidBase64DataException;
 use App\Exceptions\InvalidTotpIntervalException;
 use DateTime;
@@ -102,21 +103,30 @@ abstract class Totp
         $this->m_seed = $seed;
     }
 
+    /**
+     * Set the seed for generated codes.
+     *
+     * The provided seed must be base32 encoded.
+     *
+     * @param string $seed
+     *
+     * @throws InvalidBase32DataException if the provided seed is not a valid base32 encoding.
+     */
     public function setBase32Seed(string $seed)
     {
-
+        $this->setSeed(Base32::decode($seed));
     }
 
     /**
      * Set the seed for generated codes.
      *
-     * The provided seed is expected to be base64 encoded.
+     * The provided seed must be base64 encoded.
      *
      * @param string $seed The binary seed, base64-encoded.
      *
-     * @throws InvalidBase64DataException
+     * @throws InvalidBase64DataException if the provided seed is not a valid base64 encoding.
      */
-    public function setBase64Seed(string $seed): bool
+    public function setBase64Seed(string $seed)
     {
         $rawSeed = base64_decode($seed);
 
@@ -125,7 +135,6 @@ abstract class Totp
         }
 
         $this->setSeed($rawSeed);
-        return true;
     }
 
     /**
@@ -141,7 +150,7 @@ abstract class Totp
     /**
      * @param int $interval
      *
-     * @throws \App\Exceptions\InvalidTotpIntervalException
+     * @throws InvalidTotpIntervalException
      */
     public function setInterval(int $interval)
     {

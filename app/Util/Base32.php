@@ -94,7 +94,7 @@ class Base32
             --$length;
         }
 
-        $validLength = strspn($base32, self::Dictionary, $length);
+        $validLength = strspn($base32, self::Dictionary, 0, $length);
 
         if ($length !== $validLength) {
             throw new InvalidBase32DataException($base32, "Invalid base32 character found at position {$validLength}.");
@@ -112,7 +112,7 @@ class Base32
     public function plain(): string
     {
         if(!isset($this->m_plainData)) {
-            $this->decode();
+            $this->decodeBase32Data();
         }
 
         return $this->m_plainData;
@@ -123,15 +123,42 @@ class Base32
      *
      * If the object is not valid, this is undefined.
      *
-     * @return A const reference to the Base32 encoded content of the object.
+     * @return string The Base32 encoded content of the object.
      */
     public function encoded(): string
     {
         if(!isset($this->m_encodedData)) {
-            $this->encode();
+            $this->encodePlainData();
         }
 
         return $this->m_encodedData;
+    }
+
+    /**
+     * Encode a string as base32.
+     *
+     * @param string $plain The byte sequence to encode.
+     *
+     * @return string The base32-encoded string.
+     */
+    public static function encode(string $plain): string
+    {
+        return (new static($plain))->encoded();
+    }
+
+    /**
+     * Decode a base32-encoded string.
+     *
+     * @param string $base32 The base32 string to decode.
+     *
+     * @return string The decoded data.
+     * @throws InvalidBase32DataException if the provided string is not a valid base32 encoding.
+     */
+    public static function decode(string $base32): string
+    {
+        $codec = new static();
+        $codec->setEncoded($base32);
+        return $codec->plain();
     }
 
     /**
@@ -139,7 +166,7 @@ class Base32
      *
      * This is called when the plain text content is requested and the internal cache of the plain text content is out of sync.
      */
-    protected function decode()
+    protected function decodeBase32Data()
     {
         $byteSequence = strtoupper($this->m_encodedData);
         $this->m_plainData = "";
@@ -197,7 +224,7 @@ class Base32
      *
      * This is called when the encoded content is requested and the internal cache of the encoded content is out of sync.
      */
-    protected function encode()
+    protected function encodePlainData()
     {
         $this->m_encodedData = "";
         $len = strlen($this->m_plainData);
@@ -215,8 +242,6 @@ class Base32
 
         $paddedLen = $len + (5 - $remainder);
         $pos = 0;
-        $shift = 35;
-        $mask = 0x1f << $shift;
 
         while ($pos < $paddedLen) {
             // 5 chars of plain convert to 8 chars of base32. the 40 bits of the 5 chars are read in 5-bit chunks,
@@ -241,11 +266,15 @@ class Base32
             // with the mask extracting the leftmost 5 bits for the first character and shift the mask in each
             // iteration to extract the next 5 bits, and we need to track how far to shift the extracted bits so
             // that they represent a valid Dictionary index. hence, $mask and $shift
+            $shift = 35;
+            $mask = 0x1f << $shift;
+
             while (0 !== $mask) {
                 $this->m_encodedData .= self::Dictionary[($bits & $mask) >> $shift];
                 $mask >>= 5;
                 $shift -= 5;
             }
+
             $pos += 5;
         }
 
@@ -261,7 +290,7 @@ class Base32
 
         // undo the temporary padding of the plain data and pad the encoded data
         if (0 != $encodedPadding) {
-            $this->m_encodedData = substr($this->m_encodedData, -$encodedPadding) . str_repeat("=", $encodedPadding);
+            $this->m_encodedData = substr($this->m_encodedData, 0, -$encodedPadding) . str_repeat("=", $encodedPadding);
             $this->m_plainData = substr($this->m_plainData, 0, $len);
         }
     }

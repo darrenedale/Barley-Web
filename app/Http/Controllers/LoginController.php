@@ -2,11 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Contracts\TwoFactorAuthenticatable;
+use App\Facades\SecondFactorAuthenticator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
+use Illuminate\View\View;
 
 class LoginController extends Controller
 {
@@ -47,10 +50,15 @@ class LoginController extends Controller
                 };
         }
 
+        $user = Auth::user();
+
+        if (($user instanceof TwoFactorAuthenticatable) && $user->secondFactorEnabled()) {
+            return $this->secondFactorLogin($request);
+        }
+
         if ($request->ajax()) {
             // TODO return AJAX response
         }
-
 
         // make sure we don't forget any redirect that's been set
         Session::reflash();
@@ -60,9 +68,34 @@ class LoginController extends Controller
             ->onlyInput("username");
     }
 
+    public function secondFactorLogin(Request $request, TwoFactorAuthenticatable $user = null): Response | RedirectResponse
+    {
+        if (!$user) {
+            $user = Auth::user();
+
+            if (!($user instanceof TwoFactorAuthenticatable)) {
+                // make sure we don't forget any redirect that's been set
+                Session::reflash();
+                return back()->withErrors("Two factor authentication not supported.");
+            }
+        }
+
+        if (!SecondFactorAuthenticator::withUser($user)->attempt(SecondFactorAuthenticator::retrieveCredentials($request))) {
+            return redirect()->to("2fa.login");
+        }
+
+        return back()->with("message", "Passed 2FA.");
+    }
+
+    public function showTwoFactorLoginForm(Request $request): View
+    {
+        return view("2fa-form");
+    }
+
     public function logout(Request $request): RedirectResponse
     {
         Auth::logout();
+        SecondFactorAuthenticator::deauthenticate();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
         return redirect()->to("/");

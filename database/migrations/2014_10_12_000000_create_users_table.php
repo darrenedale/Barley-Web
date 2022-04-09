@@ -10,7 +10,7 @@ return new class extends Migration
      * Run the migrations.
      *
      * Creates the users table.
-     * 
+     *
      * @return void
      */
     public function up()
@@ -22,6 +22,7 @@ return new class extends Migration
             $table->string("email")->unique();
             $table->timestamp("email_verified_at")->nullable();
             $table->string("password");
+            $table->string("totp_secret")->nullable();
             $table->rememberToken();
             $table->timestamps();
             $table->softDeletes();

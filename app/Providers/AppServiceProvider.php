@@ -2,9 +2,11 @@
 
 namespace App\Providers;
 
+use App\Contracts\SecondFactorAuthenticator;
 use App\Exceptions\ConfigurationException;
 use App\Generators\GeneratorFactoryInterface;
 use App\Generators\GeneratorFactory;
+use App\TwoFactorAuthenticators\TotpAuthenticator;
 use Illuminate\Support\ServiceProvider;
 use Throwable;
 
@@ -40,6 +42,9 @@ class AppServiceProvider extends ServiceProvider
 
             return $factory;
         });
+
+        // use TOTP for all 2FA
+        $this->app->bind(SecondFactorAuthenticator::class, TotpAuthenticator::class);
     }
 
     /**

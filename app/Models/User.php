@@ -2,7 +2,9 @@
 
 namespace App\Models;
 
-use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Contracts\TwoFactorAuthenticatable;
+use App\Models\Traits\TotpTwoFactorAuthenticatable;
+use App\Models\Traits\TwoFactorEnabled;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -23,9 +25,12 @@ use Laravel\Sanctum\HasApiTokens;
  * @property DateTime updated_at
  * @property ?DateTime deleted_at
  */
-class User extends Authenticatable
+class User extends Authenticatable implements TwoFactorAuthenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable;
+    use HasApiTokens;
+    use HasFactory;
+    use Notifiable;
+    use TotpTwoFactorAuthenticatable;
 
     /**
      * The attributes that are mass assignable.
